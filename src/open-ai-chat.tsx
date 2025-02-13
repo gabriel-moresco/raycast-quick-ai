@@ -26,7 +26,7 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
       enableDrafts
       actions={
         <ActionPanel>
-          <Action.SubmitForm title='Open ChatGPT' onSubmit={handleSubmit} />
+          <Action.SubmitForm title='Open AI Chat' onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >

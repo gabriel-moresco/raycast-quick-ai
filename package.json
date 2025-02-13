@@ -1,8 +1,8 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "quick-gpt",
-  "title": "QuickGPT",
-  "description": "Open ChatGPT with the prompt inputted on Raycast",
+  "name": "quick-ai",
+  "title": "Quick AI",
+  "description": "Open AI Chat with the prompt inputted on Raycast.",
   "icon": "extension-icon.png",
   "author": "gabriel-moresco",
   "categories": [
@@ -11,9 +11,9 @@
   "license": "MIT",
   "commands": [
     {
-      "name": "open-chatgpt",
-      "title": "Open ChatGPT",
-      "description": "",
+      "name": "open-ai-chat",
+      "title": "Open AI Chat",
+      "description": "Open AI Chat with the prompt inputted on Raycast.",
       "mode": "view"
     }
   ],

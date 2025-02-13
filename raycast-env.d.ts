@@ -13,12 +13,12 @@ type ExtensionPreferences = {}
 declare type Preferences = ExtensionPreferences
 
 declare namespace Preferences {
-  /** Preferences accessible in the `open-chatgpt` command */
-  export type OpenChatgpt = ExtensionPreferences & {}
+  /** Preferences accessible in the `open-ai-chat` command */
+  export type OpenAiChat = ExtensionPreferences & {}
 }
 
 declare namespace Arguments {
-  /** Arguments passed to the `open-chatgpt` command */
-  export type OpenChatgpt = {}
+  /** Arguments passed to the `open-ai-chat` command */
+  export type OpenAiChat = {}
 }
 

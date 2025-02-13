@@ -1,3 +1,3 @@
-# QuickGPT
+# Quick AI
 
-Open ChatGPT with the promt inputed on Raycast
+Open AI Chat with the prompt inputted on Raycast.
