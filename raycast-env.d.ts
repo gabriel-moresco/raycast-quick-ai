@@ -15,18 +15,14 @@ declare type Preferences = ExtensionPreferences
 declare namespace Preferences {
   /** Preferences accessible in the `open-ai-chat` command */
   export type OpenAiChat = ExtensionPreferences & {}
-  /** Preferences accessible in the `translate-to-english` command */
-  export type TranslateToEnglish = ExtensionPreferences & {}
-  /** Preferences accessible in the `translate-to-portuguese` command */
-  export type TranslateToPortuguese = ExtensionPreferences & {}
+  /** Preferences accessible in the `translate` command */
+  export type Translate = ExtensionPreferences & {}
 }
 
 declare namespace Arguments {
   /** Arguments passed to the `open-ai-chat` command */
   export type OpenAiChat = {}
-  /** Arguments passed to the `translate-to-english` command */
-  export type TranslateToEnglish = {}
-  /** Arguments passed to the `translate-to-portuguese` command */
-  export type TranslateToPortuguese = {}
+  /** Arguments passed to the `translate` command */
+  export type Translate = {}
 }
 

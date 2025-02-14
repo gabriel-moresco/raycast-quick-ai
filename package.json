@@ -18,16 +18,9 @@
       "icon": "extension-icon.png"
     },
     {
-      "name": "translate-to-english",
-      "title": "Translate to English",
-      "description": "Translate the text from Portuguese to English.",
-      "mode": "view",
-      "icon": "extension-icon.png"
-    },
-    {
-      "name": "translate-to-portuguese",
-      "title": "Translate to Portuguese",
-      "description": "Translate the text from English to Portuguese.",
+      "name": "translate",
+      "title": "Translate",
+      "description": "Translate text prompts.",
       "mode": "view",
       "icon": "extension-icon.png"
     }
