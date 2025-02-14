@@ -9,7 +9,7 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
   const handleSubmit = async ({ prompt }: Schema) => {
     closeMainWindow()
 
-    prompt = `Traduza o seguinte texto de Português do Brasil para Inglês:\n\n${prompt}`
+    prompt = `Traduza o seguinte texto de Inglês para Português do Brasil:\n\n${prompt}`
 
     const url = new URL('https://chatgpt.com')
 
@@ -24,7 +24,7 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
       actions={
         <ActionPanel title='Quick AI'>
           <Action.SubmitForm
-            title='Translate to English'
+            title='Translate to Portuguese'
             onSubmit={handleSubmit}
             icon={Icon.Stars}
           />
@@ -32,7 +32,7 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
         </ActionPanel>
       }
     >
-      <Form.Description text='Portuguese -> English.' />
+      <Form.Description text='English -> Portuguese.' />
 
       <Form.TextArea
         id='prompt'

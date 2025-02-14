@@ -13,7 +13,7 @@
     {
       "name": "open-ai-chat",
       "title": "Open AI Chat",
-      "description": "Open AI Chat with the prompt inputted on Raycast.",
+      "description": "Open AI Chat with the prompt from Raycast.",
       "mode": "view",
       "icon": "extension-icon.png"
     },
@@ -21,6 +21,13 @@
       "name": "translate-to-english",
       "title": "Translate to English",
       "description": "Translate the text from Portuguese to English.",
+      "mode": "view",
+      "icon": "extension-icon.png"
+    },
+    {
+      "name": "translate-to-portuguese",
+      "title": "Translate to Portuguese",
+      "description": "Translate the text from English to Portuguese.",
       "mode": "view",
       "icon": "extension-icon.png"
     }
