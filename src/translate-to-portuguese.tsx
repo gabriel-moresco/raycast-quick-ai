@@ -9,7 +9,7 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
   const handleSubmit = async ({ prompt }: Schema) => {
     closeMainWindow()
 
-    prompt = `Traduza o seguinte texto de Inglês para Português do Brasil:\n\n${prompt}`
+    prompt = `Traduza o seguinte texto de Inglês para Português do Brasil.\n\nTexto: """\n${prompt}\n"""`
 
     const url = new URL('https://chatgpt.com')
 
