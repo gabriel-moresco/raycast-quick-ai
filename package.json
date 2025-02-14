@@ -14,7 +14,8 @@
       "name": "open-ai-chat",
       "title": "Open AI Chat",
       "description": "Open AI Chat with the prompt inputted on Raycast.",
-      "mode": "view"
+      "mode": "view",
+      "icon": "extension-icon.png"
     }
   ],
   "scripts": {
