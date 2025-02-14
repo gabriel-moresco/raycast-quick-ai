@@ -51,7 +51,7 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
     },
     initialValues: {
       prompt: draftValues?.prompt ?? '',
-      model: draftValues?.model ?? 'o3-mini',
+      model: draftValues?.model ?? models[0],
       search: draftValues?.search ?? false,
     },
   })
