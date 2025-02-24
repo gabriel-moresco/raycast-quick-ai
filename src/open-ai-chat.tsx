@@ -1,6 +1,9 @@
-import { Form, ActionPanel, Action, closeMainWindow, LaunchProps, Icon } from '@raycast/api'
+import { Form, ActionPanel, Action, closeMainWindow, LaunchProps, Icon, Cache } from '@raycast/api'
 import { useForm } from '@raycast/utils'
 import { exec } from 'child_process'
+
+const MODEL_CACHE_KEY = '@open-ai-chat:model'
+const SEARCH_CACHE_KEY = '@open-ai-chat:search'
 
 type Schema = {
   prompt: string
@@ -8,16 +11,16 @@ type Schema = {
   search: boolean
 }
 
-const models = ['o3-mini', 'GPT-4o'] as const
+const models = ['o3-mini', 'gpt-4o'] as const
 
 type Model = (typeof models)[number]
+
+const cache = new Cache()
 
 export default function Command({ draftValues }: LaunchProps<{ draftValues: Schema }>) {
   const onSubmit = async (values: Schema) => {
     const { prompt, model: modelValue, search } = values
     const model = modelValue as Model
-
-    closeMainWindow()
 
     let hints: string | null = null
 
@@ -29,7 +32,7 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
       hints = hints ? `${hints},reason` : 'reason'
     }
 
-    if (model === 'GPT-4o' && search) {
+    if (model === 'gpt-4o' && search) {
       hints = hints ? `${hints},search` : 'search'
     }
 
@@ -37,8 +40,25 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
       url.searchParams.set('hints', hints)
     }
 
+    closeMainWindow()
+
+    cache.set(MODEL_CACHE_KEY, model.toString())
+    cache.set(SEARCH_CACHE_KEY, search.toString())
+
     exec(`open "${url.toString()}"`)
   }
+
+  const defaultPrompt: string = draftValues ? draftValues.prompt : ''
+  const defaultModel: Model = draftValues
+    ? (draftValues.model as Model)
+    : cache.has(MODEL_CACHE_KEY)
+      ? (cache.get(MODEL_CACHE_KEY) as Model)
+      : 'o3-mini'
+  const defaultSearch: boolean = draftValues
+    ? draftValues.search
+    : cache.has(SEARCH_CACHE_KEY)
+      ? cache.get(SEARCH_CACHE_KEY) === 'true'
+      : false
 
   const { handleSubmit, itemProps } = useForm<Schema>({
     onSubmit,
@@ -50,9 +70,9 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
       },
     },
     initialValues: {
-      prompt: draftValues?.prompt ?? '',
-      model: draftValues?.model ?? models[0],
-      search: draftValues?.search ?? false,
+      prompt: defaultPrompt,
+      model: defaultModel,
+      search: defaultSearch,
     },
   })
 
@@ -62,8 +82,6 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
       actions={
         <ActionPanel title='Quick AI'>
           <Action.SubmitForm title='Open AI Chat' onSubmit={handleSubmit} icon={Icon.Stars} />
-
-          <Action.OpenInBrowser title='Open ChatGPT' url='https://chatgpt.com' />
         </ActionPanel>
       }
     >
@@ -81,11 +99,18 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
         ))}
       </Form.Dropdown>
 
-      {itemProps.model.value && (itemProps.model.value as Model) === 'o3-mini' && (
-        <Form.Checkbox id='reason' title='Reason' label='Think before responding' value={true} />
+      {(itemProps.model.value as Model) === 'o3-mini' && (
+        <Form.Checkbox
+          id='reason'
+          title='Reason'
+          label='Think before responding'
+          value={true}
+          // This is a read-only checkbox
+          onChange={() => {}}
+        />
       )}
 
-      {itemProps.model.value && (itemProps.model.value as Model) === 'GPT-4o' && (
+      {(itemProps.model.value as Model) === 'gpt-4o' && (
         <Form.Checkbox title='Search' label='Search the web' {...itemProps.search} />
       )}
     </Form>
