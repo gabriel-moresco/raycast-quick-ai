@@ -5,15 +5,15 @@ import { exec } from 'child_process'
 const MODEL_CACHE_KEY = '@open-ai-chat:model'
 const SEARCH_CACHE_KEY = '@open-ai-chat:search'
 
-type Schema = {
-  prompt: string
-  model: string
-  search: boolean
-}
-
 const models = ['o3-mini', 'gpt-4o'] as const
 
 type Model = (typeof models)[number]
+
+type Schema = {
+  prompt: string
+  model: Model
+  search: boolean
+}
 
 const cache = new Cache()
 
@@ -41,9 +41,6 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
     }
 
     closeMainWindow()
-
-    cache.set(MODEL_CACHE_KEY, model.toString())
-    cache.set(SEARCH_CACHE_KEY, search.toString())
 
     exec(`open "${url.toString()}"`)
   }
@@ -93,7 +90,22 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
         {...itemProps.prompt}
       />
 
-      <Form.Dropdown title='Model' {...itemProps.model}>
+      <Form.Dropdown
+        title='Model'
+        {...itemProps.model}
+        onChange={newValue => {
+          itemProps.model.onChange?.(newValue as Model)
+          cache.set(MODEL_CACHE_KEY, newValue)
+        }}
+        onFocus={event => {
+          // @ts-expect-error prevent enum error
+          itemProps.model.onFocus?.(event)
+        }}
+        onBlur={event => {
+          // @ts-expect-error prevent enum error
+          itemProps.model.onBlur?.(event)
+        }}
+      >
         {models.map((model, index) => (
           <Form.Dropdown.Item key={index} value={model} title={model} />
         ))}
@@ -111,7 +123,15 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
       )}
 
       {(itemProps.model.value as Model) === 'gpt-4o' && (
-        <Form.Checkbox title='Search' label='Search the web' {...itemProps.search} />
+        <Form.Checkbox
+          title='Search'
+          label='Search the web'
+          {...itemProps.search}
+          onChange={newValue => {
+            itemProps.search.onChange?.(newValue)
+            cache.set(SEARCH_CACHE_KEY, newValue.toString())
+          }}
+        />
       )}
     </Form>
   )
