@@ -11,16 +11,39 @@ import {
 import { useForm } from '@raycast/utils'
 import { exec } from 'child_process'
 
+const PROVIDER_CACHE_KEY = '@open-ai-chat:provider'
 const MODEL_CACHE_KEY = '@open-ai-chat:model'
 const SEARCH_CACHE_KEY = '@open-ai-chat:search'
 
-const models = ['o3-mini', 'gpt-4o'] as const
+const providers = ['ChatGPT', 'Claude'] as const
+type Provider = (typeof providers)[number]
 
-type Model = (typeof models)[number]
+type ModelKey = 'o3-mini' | 'gpt-4o' | 'claude-3.7-sonnet'
+
+type Model = {
+  key: ModelKey
+  provider: Provider
+}
+
+const models: Model[] = [
+  {
+    key: 'o3-mini',
+    provider: 'ChatGPT',
+  },
+  {
+    key: 'gpt-4o',
+    provider: 'ChatGPT',
+  },
+  {
+    key: 'claude-3.7-sonnet',
+    provider: 'Claude',
+  },
+]
 
 type Schema = {
   prompt: string
-  model: Model
+  provider: Provider
+  model: ModelKey
   search: boolean
 }
 
@@ -28,25 +51,37 @@ const cache = new Cache()
 
 export default function Command({ draftValues }: LaunchProps<{ draftValues: Schema }>) {
   const onSubmit = async (values: Schema) => {
-    const { prompt, model: modelValue, search } = values
-    const model = modelValue as Model
+    const { prompt, provider, model, search } = values
 
-    let hints: string | null = null
+    let url: URL
 
-    const url = new URL('https://chatgpt.com')
+    switch (provider) {
+      case 'ChatGPT': {
+        url = new URL('https://chatgpt.com')
+        url.searchParams.set('q', prompt)
 
-    url.searchParams.set('q', prompt)
+        let hints: string | null = null
 
-    if (model === 'o3-mini') {
-      hints = hints ? `${hints},reason` : 'reason'
-    }
+        if (model === 'o3-mini') {
+          hints = hints ? `${hints},reason` : 'reason'
+        }
 
-    if (model === 'gpt-4o' && search) {
-      hints = hints ? `${hints},search` : 'search'
-    }
+        if (model === 'gpt-4o' && search) {
+          hints = hints ? `${hints},search` : 'search'
+        }
 
-    if (hints) {
-      url.searchParams.set('hints', hints)
+        if (hints) {
+          url.searchParams.set('hints', hints)
+        }
+
+        break
+      }
+      case 'Claude': {
+        url = new URL('https://claude.ai/new')
+        url.searchParams.set('q', prompt)
+
+        break
+      }
     }
 
     closeMainWindow({ popToRootType: PopToRootType.Immediate })
@@ -55,10 +90,15 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
   }
 
   const defaultPrompt: string = draftValues ? draftValues.prompt : ''
-  const defaultModel: Model = draftValues
-    ? (draftValues.model as Model)
+  const defaultProvider: Provider = draftValues
+    ? draftValues.provider
+    : cache.has(PROVIDER_CACHE_KEY)
+      ? (cache.get(PROVIDER_CACHE_KEY) as Provider)
+      : 'ChatGPT'
+  const defaultModel: ModelKey = draftValues
+    ? draftValues.model
     : cache.has(MODEL_CACHE_KEY)
-      ? (cache.get(MODEL_CACHE_KEY) as Model)
+      ? (cache.get(MODEL_CACHE_KEY) as ModelKey)
       : 'o3-mini'
   const defaultSearch: boolean = draftValues
     ? draftValues.search
@@ -77,6 +117,7 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
     },
     initialValues: {
       prompt: defaultPrompt,
+      provider: defaultProvider,
       model: defaultModel,
       search: defaultSearch,
     },
@@ -100,10 +141,31 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
       />
 
       <Form.Dropdown
+        title='Provider'
+        {...itemProps.provider}
+        onChange={newValue => {
+          itemProps.provider.onChange?.(newValue as Provider)
+          cache.set(PROVIDER_CACHE_KEY, newValue)
+        }}
+        onFocus={event => {
+          // @ts-expect-error prevent enum error
+          itemProps.model.onFocus?.(event)
+        }}
+        onBlur={event => {
+          // @ts-expect-error prevent enum error
+          itemProps.model.onBlur?.(event)
+        }}
+      >
+        {providers.map((provider, index) => (
+          <Form.Dropdown.Item key={index} value={provider} title={provider} />
+        ))}
+      </Form.Dropdown>
+
+      <Form.Dropdown
         title='Model'
         {...itemProps.model}
         onChange={newValue => {
-          itemProps.model.onChange?.(newValue as Model)
+          itemProps.model.onChange?.(newValue as ModelKey)
           cache.set(MODEL_CACHE_KEY, newValue)
         }}
         onFocus={event => {
@@ -115,12 +177,14 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
           itemProps.model.onBlur?.(event)
         }}
       >
-        {models.map((model, index) => (
-          <Form.Dropdown.Item key={index} value={model} title={model} />
-        ))}
+        {models
+          .filter(model => model.provider === itemProps.provider.value)
+          .map((model, index) => (
+            <Form.Dropdown.Item key={index} value={model.key} title={model.key} />
+          ))}
       </Form.Dropdown>
 
-      {(itemProps.model.value as Model) === 'o3-mini' && (
+      {itemProps.provider.value === 'ChatGPT' && itemProps.model.value === 'o3-mini' && (
         <Form.Checkbox
           id='reason'
           title='Reason'
@@ -131,7 +195,7 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
         />
       )}
 
-      {(itemProps.model.value as Model) === 'gpt-4o' && (
+      {itemProps.provider.value === 'ChatGPT' && itemProps.model.value === 'gpt-4o' && (
         <Form.Checkbox
           title='Search'
           label='Search the web'
