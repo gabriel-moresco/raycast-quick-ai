@@ -1,4 +1,13 @@
-import { Form, ActionPanel, Action, closeMainWindow, LaunchProps, Icon, Cache } from '@raycast/api'
+import {
+  Form,
+  ActionPanel,
+  Action,
+  closeMainWindow,
+  LaunchProps,
+  Icon,
+  Cache,
+  PopToRootType,
+} from '@raycast/api'
 import { useForm } from '@raycast/utils'
 import { exec } from 'child_process'
 
@@ -40,7 +49,7 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
       url.searchParams.set('hints', hints)
     }
 
-    closeMainWindow()
+    closeMainWindow({ popToRootType: PopToRootType.Immediate })
 
     exec(`open "${url.toString()}"`)
   }
