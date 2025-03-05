@@ -16,7 +16,7 @@ const PROVIDER_CACHE_KEY = '@open-ai-chat:provider'
 const SEARCH_CACHE_KEY = '@open-ai-chat:search'
 const REASON_CACHE_KEY = '@open-ai-chat:reason'
 
-type ProviderKey = 'chatgpt'| 'claude'| 'grok'| 'perplexity'
+type ProviderKey = 'chatgpt' | 'claude' | 'grok' | 'perplexity'
 
 type Provider = {
   key: ProviderKey
@@ -76,11 +76,11 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
     const { prompt, provider: providerKey, search, reason } = values
 
     const provider = providers.find(p => p.key === providerKey)
-    
+
     if (!provider) {
       return
     }
-    
+
     const url = new URL(provider.url)
     url.searchParams.set('q', prompt)
 
@@ -143,12 +143,45 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
     },
   })
 
+  const changeProvider = (provider: string) => {
+    itemProps.provider.onChange?.(provider as ProviderKey)
+    cache.set(PROVIDER_CACHE_KEY, provider)
+  }
+
+  const toggleProvider = (direction: 'up' | 'down') => {
+    const currentProvider = providers.find(provider => provider.key === itemProps.provider.value)!
+
+    let nextIndex = providers.indexOf(currentProvider) + (direction === 'up' ? -1 : 1)
+
+    if (nextIndex < 0) {
+      nextIndex = providers.length - 1
+    }
+
+    if (nextIndex >= providers.length) {
+      nextIndex = 0
+    }
+
+    const nextProvider = providers[nextIndex]
+
+    changeProvider(nextProvider.key)
+  }
+
   return (
     <Form
       enableDrafts
       actions={
         <ActionPanel title='Quick AI'>
           <Action.SubmitForm title='Open AI Chat' onSubmit={handleSubmit} icon={Icon.Stars} />
+          <Action
+            title='Toggle Provider'
+            onAction={() => toggleProvider('up')}
+            shortcut={{ modifiers: ['cmd'], key: 'arrowUp' }}
+          />
+          <Action
+            title='Toggle Provider'
+            onAction={() => toggleProvider('down')}
+            shortcut={{ modifiers: ['cmd'], key: 'arrowDown' }}
+          />
         </ActionPanel>
       }
     >
@@ -163,10 +196,7 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
       <Form.Dropdown
         title='Provider'
         {...itemProps.provider}
-        onChange={newValue => {
-          itemProps.provider.onChange?.(newValue as ProviderKey)
-          cache.set(PROVIDER_CACHE_KEY, newValue)
-        }}
+        onChange={changeProvider}
         onFocus={event => {
           // @ts-expect-error prevent enum error
           itemProps.model.onFocus?.(event)
@@ -175,9 +205,15 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
           // @ts-expect-error prevent enum error
           itemProps.model.onBlur?.(event)
         }}
+        info='Press ⌘+↑ or ⌘+↓ to toggle provider.'
       >
         {providers.map((provider, index) => (
-          <Form.Dropdown.Item key={index} value={provider.key} title={provider.name} icon={{ source: provider.icon, mask: Image.Mask.Circle }}/>
+          <Form.Dropdown.Item
+            key={index}
+            value={provider.key}
+            title={provider.name}
+            icon={{ source: provider.icon, mask: Image.Mask.Circle }}
+          />
         ))}
       </Form.Dropdown>
 
