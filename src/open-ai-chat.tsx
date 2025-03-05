@@ -7,78 +7,98 @@ import {
   Icon,
   Cache,
   PopToRootType,
+  Image,
 } from '@raycast/api'
 import { useForm } from '@raycast/utils'
 import { exec } from 'child_process'
 
 const PROVIDER_CACHE_KEY = '@open-ai-chat:provider'
-const MODEL_CACHE_KEY = '@open-ai-chat:model'
 const SEARCH_CACHE_KEY = '@open-ai-chat:search'
+const REASON_CACHE_KEY = '@open-ai-chat:reason'
 
-const providers = ['ChatGPT', 'Claude'] as const
-type Provider = (typeof providers)[number]
+type ProviderKey = 'chatgpt'| 'claude'| 'grok'| 'perplexity'
 
-type ModelKey = 'o3-mini' | 'gpt-4o' | 'claude-3.7-sonnet'
-
-type Model = {
-  key: ModelKey
-  provider: Provider
+type Provider = {
+  key: ProviderKey
+  name: string
+  url: string
+  icon: string
+  hasSearch: boolean
+  hasReason: boolean
 }
 
-const models: Model[] = [
+const providers: Provider[] = [
   {
-    key: 'o3-mini',
-    provider: 'ChatGPT',
+    key: 'chatgpt',
+    name: 'ChatGPT',
+    url: 'https://chatgpt.com',
+    icon: 'chatgpt.png',
+    hasSearch: true,
+    hasReason: true,
   },
   {
-    key: 'gpt-4o',
-    provider: 'ChatGPT',
+    key: 'claude',
+    name: 'Claude',
+    url: 'https://claude.ai/new',
+    icon: 'claude.png',
+    hasSearch: false,
+    hasReason: false,
   },
   {
-    key: 'claude-3.7-sonnet',
-    provider: 'Claude',
+    key: 'grok',
+    name: 'Grok',
+    url: 'https://grok.com',
+    icon: 'grok.png',
+    hasSearch: false,
+    hasReason: false,
+  },
+  {
+    key: 'perplexity',
+    name: 'Perplexity',
+    url: 'https://www.perplexity.ai/search',
+    icon: 'perplexity.png',
+    hasSearch: false,
+    hasReason: false,
   },
 ]
 
 type Schema = {
   prompt: string
-  provider: Provider
-  model: ModelKey
+  provider: ProviderKey
   search: boolean
+  reason: boolean
 }
 
 const cache = new Cache()
 
 export default function Command({ draftValues }: LaunchProps<{ draftValues: Schema }>) {
   const onSubmit = async (values: Schema) => {
-    const { prompt, provider, model, search } = values
+    const { prompt, provider: providerKey, search, reason } = values
 
-    let url: URL
+    const provider = providers.find(p => p.key === providerKey)
+    
+    if (!provider) {
+      return
+    }
+    
+    const url = new URL(provider.url)
+    url.searchParams.set('q', prompt)
 
-    switch (provider) {
-      case 'ChatGPT': {
-        url = new URL('https://chatgpt.com')
-        url.searchParams.set('q', prompt)
-
+    switch (providerKey) {
+      case 'chatgpt': {
         let hints: string | null = null
 
-        if (model === 'o3-mini') {
+        if (reason) {
           hints = hints ? `${hints},reason` : 'reason'
         }
 
-        if (model === 'gpt-4o' && search) {
+        if (search) {
           hints = hints ? `${hints},search` : 'search'
         }
 
         if (hints) {
           url.searchParams.set('hints', hints)
         }
-
-        break
-      }
-      case 'Claude': {
-        url = new URL('https://claude.ai/new')
-        url.searchParams.set('q', prompt)
 
         break
       }
@@ -90,20 +110,20 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
   }
 
   const defaultPrompt: string = draftValues ? draftValues.prompt : ''
-  const defaultProvider: Provider = draftValues
+  const defaultProvider: ProviderKey = draftValues
     ? draftValues.provider
     : cache.has(PROVIDER_CACHE_KEY)
-      ? (cache.get(PROVIDER_CACHE_KEY) as Provider)
-      : 'ChatGPT'
-  const defaultModel: ModelKey = draftValues
-    ? draftValues.model
-    : cache.has(MODEL_CACHE_KEY)
-      ? (cache.get(MODEL_CACHE_KEY) as ModelKey)
-      : 'o3-mini'
+      ? (cache.get(PROVIDER_CACHE_KEY) as ProviderKey)
+      : 'chatgpt'
   const defaultSearch: boolean = draftValues
     ? draftValues.search
     : cache.has(SEARCH_CACHE_KEY)
       ? cache.get(SEARCH_CACHE_KEY) === 'true'
+      : false
+  const defaultReason: boolean = draftValues
+    ? draftValues.reason
+    : cache.has(REASON_CACHE_KEY)
+      ? cache.get(REASON_CACHE_KEY) === 'true'
       : false
 
   const { handleSubmit, itemProps } = useForm<Schema>({
@@ -118,8 +138,8 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
     initialValues: {
       prompt: defaultPrompt,
       provider: defaultProvider,
-      model: defaultModel,
       search: defaultSearch,
+      reason: defaultReason,
     },
   })
 
@@ -144,7 +164,7 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
         title='Provider'
         {...itemProps.provider}
         onChange={newValue => {
-          itemProps.provider.onChange?.(newValue as Provider)
+          itemProps.provider.onChange?.(newValue as ProviderKey)
           cache.set(PROVIDER_CACHE_KEY, newValue)
         }}
         onFocus={event => {
@@ -157,45 +177,23 @@ export default function Command({ draftValues }: LaunchProps<{ draftValues: Sche
         }}
       >
         {providers.map((provider, index) => (
-          <Form.Dropdown.Item key={index} value={provider} title={provider} />
+          <Form.Dropdown.Item key={index} value={provider.key} title={provider.name} icon={{ source: provider.icon, mask: Image.Mask.Circle }}/>
         ))}
       </Form.Dropdown>
 
-      <Form.Dropdown
-        title='Model'
-        {...itemProps.model}
-        onChange={newValue => {
-          itemProps.model.onChange?.(newValue as ModelKey)
-          cache.set(MODEL_CACHE_KEY, newValue)
-        }}
-        onFocus={event => {
-          // @ts-expect-error prevent enum error
-          itemProps.model.onFocus?.(event)
-        }}
-        onBlur={event => {
-          // @ts-expect-error prevent enum error
-          itemProps.model.onBlur?.(event)
-        }}
-      >
-        {models
-          .filter(model => model.provider === itemProps.provider.value)
-          .map((model, index) => (
-            <Form.Dropdown.Item key={index} value={model.key} title={model.key} />
-          ))}
-      </Form.Dropdown>
-
-      {itemProps.provider.value === 'ChatGPT' && itemProps.model.value === 'o3-mini' && (
+      {providers.find(provider => provider.key === itemProps.provider.value)?.hasReason && (
         <Form.Checkbox
-          id='reason'
           title='Reason'
           label='Think before responding'
-          value={true}
-          // This is a read-only checkbox
-          onChange={() => {}}
+          {...itemProps.reason}
+          onChange={newValue => {
+            itemProps.reason.onChange?.(newValue)
+            cache.set(REASON_CACHE_KEY, newValue.toString())
+          }}
         />
       )}
 
-      {itemProps.provider.value === 'ChatGPT' && itemProps.model.value === 'gpt-4o' && (
+      {providers.find(provider => provider.key === itemProps.provider.value)?.hasSearch && (
         <Form.Checkbox
           title='Search'
           label='Search the web'
